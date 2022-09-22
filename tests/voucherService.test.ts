@@ -6,8 +6,8 @@ import voucherService from '../src/services/voucherService';
 
 describe('voucherService', () => {
   describe('createVoucher', () => {
-    it('should create voucher', async () => {
-      jest.spyOn(voucherRepository, 'getVoucherByCode').mockImplementationOnce((code): any => null);
+    it('should create a voucher', async () => {
+      jest.spyOn(voucherRepository, 'getVoucherByCode').mockImplementationOnce(() => null);
       const voucher = {
         code: faker.random.alphaNumeric(20),
         discount: 70,
@@ -22,10 +22,9 @@ describe('voucherService', () => {
       const voucher = {
         code: faker.random.alphaNumeric(20),
         discount: 70,
+        used: false,
       };
-      jest
-        .spyOn(voucherRepository, 'getVoucherByCode')
-        .mockImplementationOnce((code): any => voucher);
+      jest.spyOn(voucherRepository, 'getVoucherByCode').mockImplementationOnce((): any => voucher);
 
       try {
         await voucherService.createVoucher(voucher.code, voucher.discount);
@@ -38,7 +37,7 @@ describe('voucherService', () => {
 
   describe('apply', () => {
     it('should return conflict error if voucher does not exist', async () => {
-      jest.spyOn(voucherRepository, 'getVoucherByCode').mockImplementationOnce((code): any => null);
+      jest.spyOn(voucherRepository, 'getVoucherByCode').mockImplementationOnce(() => null);
 
       try {
         await voucherService.applyVoucher('1212', 65);
@@ -49,12 +48,12 @@ describe('voucherService', () => {
     });
 
     it('should return voucher data with applied true if amount is greater than 100', async () => {
-      jest.spyOn(voucherRepository, 'getVoucherByCode').mockImplementationOnce((code): any => ({
+      jest.spyOn(voucherRepository, 'getVoucherByCode').mockImplementationOnce((): any => ({
         code: faker.random.alphaNumeric(20),
         discount: 70,
         used: false,
       }));
-      jest.spyOn(voucherRepository, 'useVoucher').mockImplementationOnce((code): any => {});
+      jest.spyOn(voucherRepository, 'useVoucher').mockImplementationOnce((): any => {});
 
       const result = await voucherService.applyVoucher(faker.random.alphaNumeric(20), 100);
 
