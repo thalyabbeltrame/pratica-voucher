@@ -28,6 +28,7 @@ describe('voucherService', () => {
         fail();
       } catch (e) {
         expect(e.type).toBe('conflict');
+        expect(e.message).toBe('Voucher already exist.');
       }
     });
   });
@@ -41,6 +42,7 @@ describe('voucherService', () => {
         fail();
       } catch (err) {
         expect(err.type).toBe('conflict');
+        expect(err.message).toBe('Voucher does not exist.');
       }
     });
 
@@ -56,6 +58,7 @@ describe('voucherService', () => {
         finalAmount: amount,
         applied: false,
       });
+      expect(voucherRepository.getVoucherByCode).toBeCalled();
     });
 
     it('should return voucher data with applied true if amount is greater than 100', async () => {
@@ -71,6 +74,8 @@ describe('voucherService', () => {
         finalAmount: amount - amount * (voucher.discount / 100),
         applied: true,
       });
+      expect(voucherRepository.getVoucherByCode).toBeCalled();
+      expect(voucherRepository.useVoucher).toBeCalled();
     });
 
     it('should return voucher data with applied false if voucher is already used', async () => {
@@ -88,6 +93,7 @@ describe('voucherService', () => {
         finalAmount: amount,
         applied: false,
       });
+      expect(voucherRepository.getVoucherByCode).toBeCalled();
     });
   });
 });
