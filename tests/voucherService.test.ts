@@ -5,25 +5,22 @@ import voucherRepository from '../src/repositories/voucherRepository';
 import voucherService from '../src/services/voucherService';
 
 describe('voucherService', () => {
+  const voucher = {
+    code: faker.random.alphaNumeric(20),
+    discount: 70,
+    used: false,
+  };
+
   describe('createVoucher', () => {
     it('should create a voucher', async () => {
       jest.spyOn(voucherRepository, 'getVoucherByCode').mockImplementationOnce(() => null);
-      const voucher = {
-        code: faker.random.alphaNumeric(20),
-        discount: 70,
-      };
-
       const result = await voucherService.createVoucher(voucher.code, voucher.discount);
 
       expect(result).toBeUndefined();
+      expect(voucherRepository.getVoucherByCode).toBeCalled();
     });
 
     it('should return conflict error if voucher already exists', async () => {
-      const voucher = {
-        code: faker.random.alphaNumeric(20),
-        discount: 70,
-        used: false,
-      };
       jest.spyOn(voucherRepository, 'getVoucherByCode').mockImplementationOnce((): any => voucher);
 
       try {
@@ -47,21 +44,49 @@ describe('voucherService', () => {
       }
     });
 
-    it('should return voucher data with applied true if amount is greater than 100', async () => {
-      jest.spyOn(voucherRepository, 'getVoucherByCode').mockImplementationOnce((): any => ({
-        code: faker.random.alphaNumeric(20),
-        discount: 70,
-        used: false,
-      }));
-      jest.spyOn(voucherRepository, 'useVoucher').mockImplementationOnce((): any => {});
+    it('shouldnt apply discount if amount is less than 100', async () => {
+      const amount = 50;
 
-      const result = await voucherService.applyVoucher(faker.random.alphaNumeric(20), 100);
+      jest.spyOn(voucherRepository, 'getVoucherByCode').mockImplementationOnce((): any => voucher);
+      const result = await voucherService.applyVoucher(voucher.code, amount);
 
       expect(result).toEqual({
-        amount: 100,
-        discount: 70,
-        finalAmount: 30,
+        amount,
+        discount: voucher.discount,
+        finalAmount: amount,
+        applied: false,
+      });
+    });
+
+    it('should return voucher data with applied true if amount is greater than 100', async () => {
+      const amount = 110;
+
+      jest.spyOn(voucherRepository, 'getVoucherByCode').mockImplementationOnce((): any => voucher);
+      jest.spyOn(voucherRepository, 'useVoucher').mockImplementationOnce((): any => {});
+      const result = await voucherService.applyVoucher(voucher.code, amount);
+
+      expect(result).toEqual({
+        amount,
+        discount: voucher.discount,
+        finalAmount: amount - amount * (voucher.discount / 100),
         applied: true,
+      });
+    });
+
+    it('should return voucher data with applied false if voucher is already used', async () => {
+      const amount = 110;
+
+      jest.spyOn(voucherRepository, 'getVoucherByCode').mockImplementationOnce((): any => ({
+        ...voucher,
+        used: true,
+      }));
+      const result = await voucherService.applyVoucher(voucher.code, amount);
+
+      expect(result).toEqual({
+        amount,
+        discount: voucher.discount,
+        finalAmount: amount,
+        applied: false,
       });
     });
   });
